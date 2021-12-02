@@ -14,11 +14,11 @@
 </template>
 
 <script>
-import { WebRTC } from 'vue-webrtc'
+import vueWebrtc from 'components/vue-webrtc'
 
 export default {
   name: 'PageIndex',
-  components: { [WebRTC.name]: WebRTC },
+  components: { vueWebrtc },
   methods: {
     onCapture () {
       this.img = this.$refs.webrtc.capture()
