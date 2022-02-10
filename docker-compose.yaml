@@ -1,0 +1,16 @@
+version: "3.3"
+
+services:
+  frontend:
+    image: webrtc-frontend
+    ports:
+      - 8089:8089
+    volumes:
+      - ./frontend:/app
+
+  backend:
+    image: webrtc-backend
+    ports:
+      - 3000:3000
+    volumes:
+      - ./backend:/app

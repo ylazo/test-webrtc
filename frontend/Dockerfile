@@ -1,6 +1,6 @@
 FROM node:14-alpine
 
 WORKDIR /app
-RUN npm install -g @quasar/cli;
+RUN npm install -g @quasar/cli; npm install;
 
-CMD npm install; quasar dev;
+CMD quasar dev;
