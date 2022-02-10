@@ -10,7 +10,7 @@
 </template>
 
 <script>
-const io = require('socket.io-client')
+import { io } from 'socket.io-client'
 const SimpleSignalClient = require('simple-signal-client')
 
 export default {
