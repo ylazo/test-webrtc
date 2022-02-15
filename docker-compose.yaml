@@ -9,9 +9,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ~/certs:/etc/nginx/certs:ro
-      - ~/vhost:/etc/nginx/vhost.d
       - ./frontend/dist/spa:/usr/share/nginx/html
 
   frontend:
@@ -23,11 +20,8 @@ services:
       - ./frontend/dist/spa:/usr/share/nginx/html:ro
     environment:
       - VIRTUAL_HOST=filefront.invernaderolabs.com
-      - LETSENCRYPT_HOST=filefront.invernaderolabs.com
-      - LETSENCRYPT_EMAIL=ylazo@invernaderolabs.com
     depends_on:
       - nginx-proxy
-      - letsencrypt
 
   backend:
     image: webrtc-backend
