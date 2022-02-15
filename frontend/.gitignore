@@ -1,6 +1,6 @@
 .DS_Store
 .thumbs.db
-package.json
+package-lock.json
 node_modules
 
 # Quasar core related directories
