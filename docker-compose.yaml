@@ -2,18 +2,32 @@ version: "3.3"
 
 services:
 
-  frontend:
-    image: webrtc-frontend
+  nginx-proxy:
+    image: jwilder/nginx-proxy
     restart: always
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./frontend:/app
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./frontend/dist/spa:/usr/share/nginx/html
+
+  frontend:
+    image: nginx
+    restart: always
+    expose:
+      - "80"
+    volumes:
+      - ./frontend/dist/spa:/usr/share/nginx/html:ro
+    environment:
+      - VIRTUAL_HOST=filefront.invernaderolabs.com
+    depends_on:
+      - nginx-proxy
 
   backend:
     image: webrtc-backend
     restart: always
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - ./backend:/app
