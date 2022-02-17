@@ -5,7 +5,7 @@ services:
   frontend:
     image: webrtc-frontend
     restart: always
-    expose:
+    ports:
       - "443:443"
     volumes:
       - ./frontend:/app
@@ -13,7 +13,7 @@ services:
   backend:
     image: webrtc-backend
     restart: always
-    expose:
+    ports:
       - "3000:3000"
     volumes:
       - ./backend:/app
