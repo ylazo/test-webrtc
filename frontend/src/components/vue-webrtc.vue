@@ -32,7 +32,7 @@ export default {
     },
     socketURL: {
       type: String,
-      default: 'https://fileback.invernaderolabs.com'
+      default: 'http://localhost:3000'
       // default: 'https://localhost:3000'
       // default: 'https://192.168.1.201:3000'
     },
