@@ -12,7 +12,7 @@
         />
 
         <q-toolbar-title>
-          App
+          Video Meet
         </q-toolbar-title>
 
       </q-toolbar>
@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import EssentialLink from 'components/EssentialLink.vue'
 
 const linksData = [
   {
@@ -74,7 +73,6 @@ const linksData = [
 
 export default {
   name: 'MainLayout',
-  components: { EssentialLink },
   data () {
     return {
       leftDrawerOpen: false,
