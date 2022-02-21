@@ -2,7 +2,7 @@
   "name": "test-webrtc",
   "version": "0.0.1",
   "description": "test webrtc",
-  "productName": "Quasar App",
+  "productName": "Video meet",
   "author": "ylazo@invernaderolabs.com",
   "private": true,
   "scripts": {
