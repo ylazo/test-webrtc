@@ -1,11 +1,23 @@
 <template>
-  <div class="video-list">
-    <div v-for="item in videoList"
-         v-bind:video="item"
-         v-bind:key="item.id"
-         class="video-item">
-      <video controls autoplay playsinline ref="videos" :height="cameraHeight" :muted="item.muted" :id="item.id"></video>
-    </div>
+  <div class="row">
+    <template v-for="item in videoList">
+      <video
+        :key="item.id"
+        :id="item.id" :video="item" :height="cameraHeight" :muted="item.muted"
+        ref="videos" autoplay playsinline
+        class="relative-position"
+      >
+      </video>
+      <q-btn
+        :key="item.id"
+        v-if="!item.isLocal"
+        class="absolute" round
+        :icon="item.muted ? 'mdi-microphone-off' : 'mdi-microphone'"
+        :color="item.muted ? 'red' : 'white'"
+        :text-color="!item.muted ? 'black' : ''"
+        @click="item.muted = !item.muted"
+      />
+    </template>
   </div>
 </template>
 
@@ -22,7 +34,8 @@ export default {
       signalClient: null,
       videoList: [],
       canvas: null,
-      socket: null
+      socket: null,
+      localStream: null
     }
   },
   props: {
@@ -32,7 +45,7 @@ export default {
     },
     socketURL: {
       type: String,
-      default: 'http://localhost:3000'
+      default: 'http://fileback.invernaderolabs.com'
       // default: 'https://localhost:3000'
       // default: 'https://192.168.1.201:3000'
     },
@@ -72,25 +85,37 @@ export default {
     }
   },
   watch: {
+    enableAudio () {
+      this.setAudio()
+    }
   },
   mounted () {
   },
   methods: {
+    setAudio () {
+      if (!this.localStream) return
+      const audioTracks = this.localStream.getAudioTracks()
+      audioTracks[0].enabled = this.enableAudio
+    },
     async join () {
       const that = this
       this.log('join')
       this.socket = io(this.socketURL, { rejectUnauthorized: false, transports: ['websocket'] })
       this.signalClient = new SimpleSignalClient(this.socket)
+
       const constraints = {
         video: that.enableVideo,
-        audio: that.enableAudio
+        audio: true
       }
+
       if (that.deviceId && that.enableVideo) {
         constraints.video = { deviceId: { exact: that.deviceId } }
       }
-      const localStream = await navigator.mediaDevices.getUserMedia(constraints)
-      this.log('opened', localStream)
-      this.joinedRoom(localStream, true)
+
+      this.localStream = await navigator.mediaDevices.getUserMedia(constraints)
+      this.log('opened', this.localStream)
+      this.joinedRoom(this.localStream, true)
+
       this.signalClient.once('discover', (discoveryData) => {
         that.log('discovered', discoveryData)
         async function connectToPeer (peerID) {
@@ -111,6 +136,7 @@ export default {
         discoveryData.forEach((peerID) => connectToPeer(peerID))
         that.$emit('opened-room', that.roomId)
       })
+
       this.signalClient.on('request', async (request) => {
         that.log('requested', request)
         const { peer } = await request.accept({}, that.peerOptions)
@@ -121,7 +147,10 @@ export default {
           }
         })
       })
+
       this.signalClient.discover(that.roomId)
+
+      this.setAudio()
     },
     onPeer (peer, localStream) {
       const that = this
@@ -177,6 +206,7 @@ export default {
       this.signalClient.peers().forEach(peer => peer.removeAllListeners())
       this.signalClient.destroy()
       this.signalClient = null
+      this.localStream = null
       this.socket.destroy()
       this.socket = null
     },
@@ -223,22 +253,5 @@ export default {
   }
 }
 </script>
-<style scoped>
-  .video-list {
-    background: whitesmoke;
-    height: auto;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-    .video-list div {
-      padding: 0px;
-    }
-
-  .video-item {
-    background: #c5c4c4;
-    display: inline-block;
-  }
+<style>
 </style>

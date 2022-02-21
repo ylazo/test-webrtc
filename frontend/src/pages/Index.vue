@@ -1,13 +1,34 @@
 <template>
   <q-page padding class="row items-center justify-center" style="max-width: 100%;">
-    <div class="col col-auto" style="min-width: 280px;">
-      <div class="row">
-        <vue-webrtc ref="webrtc" width="100%" roomId="public-room-v2" style="width: 100%;">
+    <div class="col col-auto">
+      <div class="row" v-if="!joined">
+        <q-btn
+          padding="md lg" label="Iniciar llamada" icon-right="mdi-phone-hangup" color="primary" rounded uneleva
+          @click="join"
+        ></q-btn>
+      </div>
+      <div class="row" v-show="joined">
+        <vue-webrtc
+          ref="webrtc" width="100%" roomId="public-room-v2" style="width: 100%;"
+          :enable-audio="enableAudio"
+          :camera-height="300" enable-logs
+        >
         </vue-webrtc>
       </div>
-      <div class="row justify-evenly">
-        <q-btn color="primary" @click="onJoin" class="col" style="max-width: 48%;">Entrar</q-btn>
-        <q-btn color="secondary" @click="onLeave" class="col" style="max-width: 48%;">Salir</q-btn>
+      <div class="row justify-center q-mt-sm" v-if="joined">
+        <div class="col col-auto">
+          <q-btn
+            padding="md" round
+            :color="enableAudio ? 'white' : 'red'"
+            :icon="enableAudio ? 'mdi-microphone' : 'mdi-microphone-off'"
+            :text-color="enableAudio ? 'black' : ''"
+            :dark="enableAudio"
+            @click="enableAudio = !enableAudio"
+          />
+        </div>
+        <div class="col col-auto q-pl-md">
+          <q-btn padding="md" round color="red" icon="mdi-phone-hangup" @click="leave" />
+        </div>
       </div>
     </div>
   </q-page>
@@ -19,7 +40,21 @@ import vueWebrtc from 'components/vue-webrtc'
 export default {
   name: 'PageIndex',
   components: { vueWebrtc },
+  data () {
+    return {
+      enableAudio: true,
+      joined: false
+    }
+  },
   methods: {
+    join () {
+      this.joined = true
+      this.onJoin()
+    },
+    leave () {
+      this.joined = false
+      this.onLeave()
+    },
     onCapture () {
       this.img = this.$refs.webrtc.capture()
     },
