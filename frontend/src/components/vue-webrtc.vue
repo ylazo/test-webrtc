@@ -7,7 +7,9 @@
           ref="videos" autoplay playsinline
         >
         </video>
-        <div class="row absolute-full controls justify-center" style="top: auto;bottom: 6px;">
+        <div
+          class="row absolute-full controls justify-center" style="top: auto;bottom: 6px;"
+        >
           <div class="col q-pa-sm col-auto">
             <q-btn
               round
@@ -47,8 +49,8 @@ export default {
     },
     socketURL: {
       type: String,
-      // default: 'http://fileback.invernaderolabs.com'
-      default: 'http://localhost:3000'
+      default: 'https://fileback.invernaderolabs.com'
+      // default: 'http://localhost:3000'
       // default: 'https://192.168.1.201:3000'
     },
     cameraHeight: {
@@ -89,6 +91,9 @@ export default {
   watch: {
     enableAudio () {
       this.setAudio()
+    },
+    enableVideo () {
+      this.setVideo()
     }
   },
   mounted () {
@@ -99,6 +104,11 @@ export default {
       const audioTracks = this.localStream.getAudioTracks()
       audioTracks[0].enabled = this.enableAudio
     },
+    setVideo () {
+      if (!this.localStream) return
+      const videoTracks = this.localStream.getVideoTracks()
+      videoTracks[0].enabled = this.enableVideo
+    },
     async join () {
       const that = this
       this.log('join')
@@ -106,7 +116,7 @@ export default {
       this.signalClient = new SimpleSignalClient(this.socket)
 
       const constraints = {
-        video: that.enableVideo,
+        video: true,
         audio: true
       }
 
@@ -153,6 +163,7 @@ export default {
       this.signalClient.discover(that.roomId)
 
       this.setAudio()
+      this.setVideo()
     },
     onPeer (peer, localStream) {
       const that = this

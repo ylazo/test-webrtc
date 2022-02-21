@@ -11,6 +11,7 @@
         v-show="joined"
         ref="webrtc" width="100%" roomId="public-room-v2" style="width: 100%;"
         :enable-audio="enableAudio"
+        :enable-video="enableVideo"
         :camera-height="300" enable-logs
       >
       </vue-webrtc>
@@ -21,8 +22,16 @@
             :color="enableAudio ? 'white' : 'red'"
             :icon="enableAudio ? 'mdi-microphone' : 'mdi-microphone-off'"
             :text-color="enableAudio ? 'black' : ''"
-            :dark="enableAudio"
             @click="enableAudio = !enableAudio"
+          />
+        </div>
+        <div class="col col-auto q-pl-md">
+          <q-btn
+            padding="md" round
+            :color="enableVideo ? 'white' : 'red'"
+            :icon="enableVideo ? 'mdi-video' : 'mdi-video-off'"
+            :text-color="enableVideo ? 'black' : ''"
+            @click="enableVideo = !enableVideo"
           />
         </div>
         <div class="col col-auto q-pl-md">
@@ -42,6 +51,7 @@ export default {
   data () {
     return {
       enableAudio: true,
+      enableVideo: true,
       joined: false
     }
   },
