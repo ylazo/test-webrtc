@@ -1,22 +1,24 @@
 <template>
   <div class="row">
     <template v-for="item in videoList">
-      <video
-        :key="item.id"
-        :id="item.id" :video="item" :height="cameraHeight" :muted="item.muted"
-        ref="videos" autoplay playsinline
-        class="relative-position"
-      >
-      </video>
-      <q-btn
-        :key="item.id"
-        v-if="!item.isLocal"
-        class="absolute" round
-        :icon="item.muted ? 'mdi-microphone-off' : 'mdi-microphone'"
-        :color="item.muted ? 'red' : 'white'"
-        :text-color="!item.muted ? 'black' : ''"
-        @click="item.muted = !item.muted"
-      />
+      <div :key="item.id" class="col relative-position">
+        <video
+          :id="item.id" :video="item" :height="cameraHeight" :muted="item.muted"
+          ref="videos" autoplay playsinline
+        >
+        </video>
+        <div class="row absolute-full controls justify-center" style="top: auto;bottom: 6px;">
+          <div class="col q-pa-sm col-auto">
+            <q-btn
+              round
+              :icon="item.muted ? 'mdi-microphone-off' : 'mdi-microphone'"
+              :color="item.muted ? 'red' : 'white'"
+              :text-color="!item.muted ? 'black' : ''"
+              @click="item.muted = !item.muted"
+            />
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -45,8 +47,8 @@ export default {
     },
     socketURL: {
       type: String,
-      default: 'http://fileback.invernaderolabs.com'
-      // default: 'https://localhost:3000'
+      // default: 'http://fileback.invernaderolabs.com'
+      default: 'http://localhost:3000'
       // default: 'https://192.168.1.201:3000'
     },
     cameraHeight: {
@@ -254,4 +256,8 @@ export default {
 }
 </script>
 <style>
+.controls {
+  background: rgb(0,0,0);
+  background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(255,255,255,0) 100%);
+}
 </style>

@@ -7,14 +7,13 @@
           @click="join"
         ></q-btn>
       </div>
-      <div class="row" v-show="joined">
-        <vue-webrtc
-          ref="webrtc" width="100%" roomId="public-room-v2" style="width: 100%;"
-          :enable-audio="enableAudio"
-          :camera-height="300" enable-logs
-        >
-        </vue-webrtc>
-      </div>
+      <vue-webrtc
+        v-show="joined"
+        ref="webrtc" width="100%" roomId="public-room-v2" style="width: 100%;"
+        :enable-audio="enableAudio"
+        :camera-height="300" enable-logs
+      >
+      </vue-webrtc>
       <div class="row justify-center q-mt-sm" v-if="joined">
         <div class="col col-auto">
           <q-btn
