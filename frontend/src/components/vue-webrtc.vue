@@ -8,6 +8,7 @@
         >
         </video>
         <div
+          v-if="!item.isLocal"
           class="row absolute-full controls justify-center" style="top: auto;bottom: 6px;"
         >
           <div class="col q-pa-sm col-auto">
