@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row items-center justify-evenly">
+  <q-page class="row items-center justify-evenly" padding>
     <div class="col col-auto">
       <template  v-if="!joined">
         <div class="row">
@@ -10,7 +10,7 @@
         </div>
       </template>
       <template v-else>
-        <quasar-webrtc :camera-height="300" @close-room="joined = false">
+        <quasar-webrtc @close-room="joined = false">
         </quasar-webrtc>
       </template>
     </div>

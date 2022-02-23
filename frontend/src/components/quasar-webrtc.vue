@@ -1,31 +1,61 @@
 <template>
   <div class="row">
-    <template v-for="(item, i) in videoList" :key="item.id">
-      <div class="col relative-position">
-        <video
-          :id="item.id" :video="item" :height="cameraHeight" :muted="item.muted"
-          :ref="el => { if (el) videos[i] = el }"
-          autoplay playsinline
-        >
-        </video>
-        <div
-          v-if="!item.isLocal"
-          class="row absolute-full controls justify-center" style="top: auto;bottom: 6px;"
-        >
-          <div class="col q-pa-sm col-auto">
-            <q-btn
-              round
-              :icon="item.muted ? 'mdi-microphone-off' : 'mdi-microphone'"
-              :color="item.muted ? 'red' : 'white'"
-              :text-color="!item.muted ? 'black' : ''"
-              @click="item.muted = !item.muted"
-            />
+    <div class="col col-10" v-if="!!selectedVideo">
+      <div class="row justify-center">
+        <div class="col col-auto relative-position video-container">
+          <video
+            muted autoplay playsinline ref="focusVideo"
+            style="max-width: 100%;display: block;max-height: 100%;"
+          ></video>
+          <div class="row absolute-full controls justify-center" style="top: auto;bottom: 0;">
+            <div class="col q-pa-sm col-auto">
+              <q-btn
+                round
+                icon="mdi-fullscreen-exit"
+                color="grey-8"
+                @click="videoSelector = -1"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </template>
+    </div>
+    <div class="col">
+      <div class="row">
+        <template v-for="(item, i) in videoList" :key="item.id">
+          <div class="col relative-position video-container">
+            <video
+              :id="item.id" :video="item" :muted="item.muted"
+              :ref="el => { if (el) videos[i] = el }"
+              autoplay playsinline
+              style="max-width: 100%;display: block;max-height: 100%;"
+            >
+            </video>
+            <div class="row absolute-full controls justify-center" style="top: auto;bottom: 0;">
+              <div class="col q-pa-sm col-auto" v-if="item.isLocal">
+                <q-btn
+                  round
+                  :icon="item.muted ? 'mdi-microphone-off' : 'mdi-microphone'"
+                  :color="item.muted ? 'red' : 'white'"
+                  :text-color="!item.muted ? 'black' : ''"
+                  @click="item.muted = !item.muted"
+                />
+              </div>
+              <div class="col q-pa-sm col-auto">
+                <q-btn
+                  round
+                  icon="mdi-fullscreen"
+                  color="grey-8"
+                  @click="selectVideo(i, item.stream)"
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
-  <div class="row justify-center">
+  <div class="row justify-center q-mt-sm">
     <div class="col col-auto">
       <q-btn
         padding="md" round
@@ -51,7 +81,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, Ref, ref, toRef } from 'vue'
+import { defineComponent, onMounted, Ref, ref, toRef, watch, computed } from 'vue'
 import { Socket } from 'socket.io-client/build/esm/socket.js'
 import { DefaultEventsMap } from '@socket.io/component-emitter'
 import { io } from 'socket.io-client'
@@ -64,10 +94,6 @@ export default defineComponent({
   name: 'quasar-webrtc',
   props: {
     deviceId: String,
-    cameraHeight: {
-      type: [Number, String],
-      default: 160
-    },
     roomId: {
       type: String,
       default: 'public-room-v2'
@@ -86,18 +112,25 @@ export default defineComponent({
     const enableAudio: Ref<boolean> = ref(true)
     const enableVideo: Ref<boolean> = ref(true)
 
+    const videoSelector: Ref<number> = ref(-1)
+    const focusVideo: Ref<HTMLVideoElement | null> = ref(null)
+
     const setAudio = () => {
       if (!localStream.value) return
-      const audioTrack = localStream.value.getAudioTracks()[0]
-      if (typeof audioTrack?.enabled === 'boolean') audioTrack.enabled = enableAudio.value
+      const audioTracks = localStream.value.getAudioTracks()
+      if (typeof audioTracks[0]?.enabled === 'boolean') audioTracks[0].enabled = enableAudio.value
     }
 
     const setVideo = () => {
       if (!localStream.value) return
-      const videoTrack = localStream.value.getVideoTracks()[0]
+      const videoTracks = localStream.value.getVideoTracks()
 
-      if (typeof videoTrack?.enabled === 'boolean') videoTrack.enabled = enableVideo.value
+      if (typeof videoTracks[0]?.enabled === 'boolean') videoTracks[0].enabled = enableVideo.value
     }
+
+    watch(enableAudio, setAudio)
+
+    watch(enableVideo, setVideo)
 
     const join = async () => {
       // const socketUrl = 'http://localhost:3000'
@@ -209,6 +242,15 @@ export default defineComponent({
       emit('close-room')
     }
 
+    const selectVideo = (i: number, stream: MediaStream) => {
+      videoSelector.value = i
+      setTimeout(() => {
+        if (focusVideo.value) focusVideo.value.srcObject = stream
+      }, 500)
+    }
+
+    const selectedVideo = computed(() => videoList.value[videoSelector.value])
+
     onMounted(async () => {
       try {
         await join()
@@ -225,12 +267,27 @@ export default defineComponent({
       leave,
       videoList,
       localStream,
-      videos
+      videos,
+      videoSelector,
+      selectedVideo,
+      focusVideo,
+      selectVideo
     }
   }
 })
 </script>
-<style>
+<style lang="scss">
+.video-container .controls {
+  display: none;
+}
+
+.video-container:hover {
+
+  .controls {
+    display: flex !important;
+  }
+}
+
 .controls {
   background: rgb(0,0,0);
   background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(255,255,255,0) 100%);
