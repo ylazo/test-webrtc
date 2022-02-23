@@ -2,19 +2,12 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated>
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="mdi-menu"
-          aria-label="Menu"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        />
 
         <q-toolbar-title>
-          Video Meet
+          Video meet
         </q-toolbar-title>
 
+        <div>Quasar v{{ $q.version }}</div>
       </q-toolbar>
     </q-header>
 
@@ -24,14 +17,14 @@
   </q-layout>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 
-export default {
+export default defineComponent({
   name: 'MainLayout',
-  data () {
-    return {
-      leftDrawerOpen: false
-    }
+
+  setup () {
+    return {}
   }
-}
+})
 </script>
