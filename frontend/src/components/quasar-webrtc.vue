@@ -5,7 +5,7 @@
         <div class="col col-auto relative-position video-container">
           <video
             muted autoplay playsinline ref="focusVideo"
-            style="max-width: 100%;display: block;max-height: 100%;"
+            style="width: 100%;display: block;max-height: 100%;"
           ></video>
           <div class="row absolute-full controls justify-center" style="top: auto;bottom: 0;">
             <div class="col q-pa-sm col-auto">
@@ -28,11 +28,11 @@
               :id="item.id" :video="item" :muted="item.muted"
               :ref="el => { if (el) videos[i] = el }"
               autoplay playsinline
-              style="max-width: 100%;display: block;max-height: 100%;"
+              style="width: 100%;display: block;max-height: 100%;"
             >
             </video>
             <div class="row absolute-full controls justify-center" style="top: auto;bottom: 0;">
-              <div class="col q-pa-sm col-auto" v-if="item.isLocal">
+              <div class="col q-pa-sm col-auto" v-if="!item.isLocal">
                 <q-btn
                   round
                   :icon="item.muted ? 'mdi-microphone-off' : 'mdi-microphone'"
@@ -161,7 +161,7 @@ export default defineComponent({
 
             const found = videoList.value.find(video => video.isLocal)
 
-            if (found) onPeer(peer, found)
+            if (found) onPeer(peer, found.stream)
           } catch {}
         })
 
@@ -175,7 +175,7 @@ export default defineComponent({
 
         const found = videoList.value.find(video => video.isLocal)
 
-        if (found) onPeer(peer, found)
+        if (found) onPeer(peer, found.stream)
       })
 
       // eslint-disable-next-line
@@ -211,7 +211,7 @@ export default defineComponent({
     }
 
     // eslint-disable-next-line
-    const onPeer = (peer: any, localStream: Video) => {
+    const onPeer = (peer: any, localStream: MediaStream) => {
       // eslint-disable-next-line
       peer.addStream(localStream)
       // eslint-disable-next-line
