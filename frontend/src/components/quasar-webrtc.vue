@@ -229,8 +229,10 @@ export default defineComponent({
     const leave = () => {
       videoList.value.forEach(video => video.stream.getTracks().forEach(t => t.stop()))
       videoList.value = []
-      // eslint-disable-next-line
-      signalClient.value.peers().forEach((peer: any) => peer.removeAllListeners())
+      try {
+        // eslint-disable-next-line
+        signalClient.value.peers().forEach((peer: any) => peer.removeAllListeners())
+      } catch {}
       // eslint-disable-next-line
       signalClient.value.destroy()
       signalClient.value = null
