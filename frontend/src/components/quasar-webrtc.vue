@@ -112,8 +112,8 @@ export default defineComponent({
 
     const join = async () => {
       console.log(document.URL)
-      const socketUrl = 'http://localhost:3000'
-      // const socketUrl = 'https://fileback.invernaderolabs.com'
+      // const socketUrl = 'http://localhost:3000'
+      const socketUrl = 'https://fileback.invernaderolabs.com'
       socket.value = io(socketUrl, { rejectUnauthorized: false, transports: ['websocket'] })
       // eslint-disable-next-line
       signalClient.value = new SimpleSignalClient(socket.value)
