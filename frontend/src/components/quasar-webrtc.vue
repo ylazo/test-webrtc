@@ -41,7 +41,7 @@
         @click="enableVideo = !enableVideo"
       />
     </div>
-    <div class="col col-auto q-pl-md">
+    <div class="col col-auto q-pl-md" v-if="!screenStream">
       <q-btn
         padding="md" round
         color="white"
@@ -50,9 +50,27 @@
         @click="shareScreen"
       />
     </div>
+    <div class="col col-auto q-pl-md" v-else>
+      <q-btn
+        padding="md" round
+        color="white"
+        icon="mdi-monitor-off"
+        text-color="black"
+        @click="stopShareScreen"
+      />
+    </div>
+    <div class="col col-auto q-pl-md">
+      <q-btn padding="md" round color="white" text-color="black" icon="mdi-account-supervisor">
+        <q-badge color="transparent" text-color="black" floating>
+          <strong>{{ sessionLength }}</strong>
+        </q-badge>
+      </q-btn>
+    </div>
     <div class="col col-auto q-pl-md">
       <q-btn padding="md" round color="red" icon="mdi-phone-hangup" @click="leave" />
     </div>
+    <audio ref="joinCallAudio" preload="auto" src="sounds/join-call.mp3" v-show="false"></audio>
+    <audio ref="leaveCallAudio" preload="auto" src="sounds/leave-call.mp3" v-show="false"></audio>
   </div>
 </template>
 
@@ -72,16 +90,22 @@ export default defineComponent({
   name: 'quasar-webrtc',
   props: {
     deviceId: String,
+    socketUrl: {
+      type: String,
+      required: true
+    },
     roomId: {
       type: String,
       default: 'public-room-v2'
     }
   },
-  emits: ['opened-room', 'joined-room', 'left-room', 'close-room', 'share-started'],
+  emits: ['opened-room', 'joined-room', 'left-room', 'close-room', 'share-started', 'screen-shared'],
   components: { videoContainer, videoItem },
   setup (props, { emit }) {
     const deviceId = toRef(props, 'deviceId')
     const roomId = toRef(props, 'roomId')
+    const socketUrl = toRef(props, 'socketUrl')
+
     const socket: Ref<Socket<DefaultEventsMap, DefaultEventsMap> | null> = ref(null)
     const localStream: Ref<MediaStream | null> = ref(null)
     const videoList: Ref<Video[]> = ref([])
@@ -92,6 +116,12 @@ export default defineComponent({
     const enableVideo: Ref<boolean> = ref(true)
 
     const videoSelector: Ref<number> = ref(-1)
+    const screenStream: Ref<MediaStream | null> = ref(null)
+
+    const joinCallAudio: Ref<HTMLAudioElement | null> = ref(null)
+    const leaveCallAudio: Ref<HTMLAudioElement | null> = ref(null)
+
+    const sessionLength: Ref<number> = ref(0)
 
     const setAudio = () => {
       if (!localStream.value) return
@@ -111,10 +141,7 @@ export default defineComponent({
     watch(enableVideo, setVideo)
 
     const join = async () => {
-      console.log(document.URL)
-      // const socketUrl = 'http://localhost:3000'
-      const socketUrl = 'https://fileback.invernaderolabs.com'
-      socket.value = io(socketUrl, { rejectUnauthorized: false, transports: ['websocket'] })
+      socket.value = io(socketUrl.value, { rejectUnauthorized: false, transports: ['websocket'] })
       // eslint-disable-next-line
       signalClient.value = new SimpleSignalClient(socket.value)
 
@@ -130,7 +157,7 @@ export default defineComponent({
       joinedRoom(localStream.value, true)
 
       // eslint-disable-next-line
-      signalClient.value.once('discover', (discoveryData: string[]) => {
+      signalClient.value.on('discover', async (discoveryData: string[]) => {
         // eslint-disable-next-line
         discoveryData.forEach(async peerID => {
           if (peerID === socket.value?.id) return
@@ -138,11 +165,13 @@ export default defineComponent({
             // eslint-disable-next-line
             const { peer } = await signalClient.value.connect(peerID, roomId.value)
 
-            const found = videoList.value.find(video => video.isLocal)
-
-            if (found) onPeer(peer, found.stream)
-          } catch {}
+            if (localStream.value) onPeer(peer, localStream.value)
+          } catch (e) {
+            console.warn(e)
+          }
         })
+
+        sessionLength.value = discoveryData.length
 
         emit('opened-room', roomId.value)
       })
@@ -152,60 +181,94 @@ export default defineComponent({
         // eslint-disable-next-line
         const { peer } = await request.accept({})
 
-        const found = videoList.value.find(video => video.isLocal)
+        if (localStream.value) onPeer(peer, localStream.value)
 
-        if (found) onPeer(peer, found.stream)
+        if (screenStream.value) onPeer(peer, screenStream.value)
+
+        // eslint-disable-next-line
+        sessionLength.value = signalClient.value.peers().length
       })
 
       // eslint-disable-next-line
       signalClient.value.discover(roomId.value)
+
       setAudio()
       setVideo()
     }
 
-    const joinedRoom = (stream: MediaStream, isLocal: boolean) => {
-      const found = videoList.value.find(video => video.id === stream.id)
-
-      if (found === undefined) {
-        const video = {
-          id: stream.id,
-          stream: stream,
-          isLocal: isLocal
-        }
-
-        videoList.value.push(video)
-      }
-
-      emit('joined-room', stream.id)
+    const onDisPeer = (stream: MediaStream) => {
+      leaveRoom(stream)
+      leaveCallAudio.value?.play().finally(() => null)
     }
 
     // eslint-disable-next-line
     const onPeer = (peer: any, localStream: MediaStream) => {
       // eslint-disable-next-line
+      if (peer.destroyed) return
+      // eslint-disable-next-line
       peer.addStream(localStream)
       // eslint-disable-next-line
-      peer.on('stream', (remoteStream: MediaStream) => {
+      peer.on('stream', async (remoteStream: MediaStream) => {
         joinedRoom(remoteStream, false)
 
         // eslint-disable-next-line
-        peer.on('close', () => {
-          videoList.value = videoList.value.filter(video => video.id !== remoteStream.id)
-          emit('left-room', remoteStream.id)
+        peer.on('close', async () => {
+          try {
+            // eslint-disable-next-line
+            signalClient.value._peers[peer.id]
+          } catch (e) {
+            console.warn(e)
+          }
+
+          onDisPeer(remoteStream)
+          // eslint-disable-next-line
+          sessionLength.value = signalClient.value.peers().length
+        })
+
+        // eslint-disable-next-line
+        peer.on('track', (track: MediaStreamTrack, remoteStream: MediaStream) => {
+          // eslint-disable-next-line
+          track.addEventListener('mute', async () => onDisPeer(remoteStream))
         })
       })
+
+      joinCallAudio.value?.play().finally(() => null)
+    }
+
+    const joinedRoom = (stream: MediaStream, isLocal: boolean) => {
+      if (videoList.value.find(video => video.id === stream.id)) return
+
+      videoList.value.push({ id: stream.id, stream, isLocal })
+
+      emit('joined-room', stream.id)
+    }
+
+    const leaveRoom = (stream: MediaStream) => {
+      videoList.value = videoList.value.filter(video => video.id !== stream.id)
+      emit('left-room', stream.id)
     }
 
     const leave = () => {
-      videoList.value.forEach(video => video.stream.getTracks().forEach(t => t.stop()))
+      stopShareScreen()
+
+      videoList.value.forEach(video => video.stream.getTracks().forEach(track => track.stop()))
       videoList.value = []
-      try {
+
+      // eslint-disable-next-line
+      signalClient.value.peers().forEach((peer: any) => {
         // eslint-disable-next-line
-        signalClient.value.peers().forEach((peer: any) => peer.removeAllListeners())
-      } catch {}
+        if (peer.destroyed) return
+        // eslint-disable-next-line
+        peer.removeAllListeners()
+      })
+
       // eslint-disable-next-line
       signalClient.value.destroy()
       signalClient.value = null
+
+      localStream.value?.getTracks().forEach(track => track.stop())
       localStream.value = null
+
       socket.value?.disconnect()
       socket.value?.close()
       socket.value = null
@@ -214,15 +277,36 @@ export default defineComponent({
     }
 
     const shareScreen = async () => {
-      if (navigator.mediaDevices === undefined) return
-
       try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
-        joinedRoom(screenStream, true)
-        emit('share-started', screenStream.id)
+        screenStream.value = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+        joinedRoom(screenStream.value, true)
+        emit('share-started', screenStream.value.id)
         // eslint-disable-next-line
-        signalClient.value.peers().forEach((p: any) => onPeer(p, screenStream))
-      } catch {}
+        signalClient.value?.peers().forEach((peer: any) => {
+          // eslint-disable-next-line
+          if (peer.destroyed) return
+          if (screenStream.value) onPeer(peer, screenStream.value)
+        })
+      } catch (e) {
+        console.warn(e)
+      }
+    }
+
+    const stopShareScreen = () => {
+      try {
+        // eslint-disable-next-line
+        signalClient.value?.peers().forEach((peer: any) => {
+          // eslint-disable-next-line
+          if (peer.destroyed) return
+          // eslint-disable-next-line
+          if (screenStream.value) peer.removeStream(screenStream.value)
+        })
+        videoList.value = videoList.value.filter(video => video.id !== screenStream.value?.id)
+        screenStream.value?.getTracks().forEach(track => track.stop())
+        screenStream.value = null
+      } catch (e) {
+        console.warn(e)
+      }
     }
 
     const selectedVideo = computed(() => videoList.value[videoSelector.value])
@@ -230,19 +314,20 @@ export default defineComponent({
     onMounted(join)
 
     return {
-      socket,
-      setAudio,
       enableAudio,
       enableVideo,
       join,
-      joinedRoom,
       leave,
       videoList,
-      localStream,
       videos,
       videoSelector,
       selectedVideo,
-      shareScreen
+      shareScreen,
+      stopShareScreen,
+      joinCallAudio,
+      leaveCallAudio,
+      screenStream,
+      sessionLength
     }
   }
 })
