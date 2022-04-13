@@ -9,6 +9,7 @@
 /* eslint-env node */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { configure } = require('quasar/wrappers')
+const webpack = require('webpack')
 
 module.exports = configure(function (ctx) {
   return {
@@ -54,8 +55,20 @@ module.exports = configure(function (ctx) {
 
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
-
+      vueRouterMode: 'history', // available values: 'hash', 'history',
+      env: {
+        backendUrl: 'https://fileback.invernaderolabs.com'
+      },
+      extendWebpack (cfg) {
+        cfg.plugins.push(               
+          new webpack.ProvidePlugin({
+            process: 'process/browser'
+          })
+        )
+        cfg.resolve.fallback = {
+          buffer: require.resolve('buffer/')
+        }
+      },
       // transpile: false,
       // publicPath: '/',
 

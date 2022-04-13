@@ -10,7 +10,7 @@
         </div>
       </template>
       <template v-else>
-        <quasar-webrtc @close-room="joined = false">
+        <quasar-webrtc :socket-url="socketUrl" @close-room="joined = false">
         </quasar-webrtc>
       </template>
     </div>
@@ -18,14 +18,20 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, Ref } from 'vue'
 import quasarWebrtc from 'components/quasar-webrtc.vue'
 
 export default defineComponent({
   name: 'PageIndex',
   components: { quasarWebrtc },
   setup () {
-    return { joined: ref(false) }
+    const socketUrl: Ref<string> = ref('')
+    const joined: Ref<boolean> = ref(false)
+
+    const isProd = document.URL.includes('invernaderolabs')
+    socketUrl.value = isProd ? 'https://fileback.invernaderolabs.com' : 'http://localhost:3000'
+
+    return { joined, socketUrl }
   }
 })
 </script>
