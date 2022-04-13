@@ -67,7 +67,7 @@
       </q-btn>
     </div>
     <div class="col col-auto q-pl-md">
-      <q-btn padding="md" round color="red" icon="mdi-phone-hangup" @click="leave" />
+      <q-btn padding="md" round color="red" icon="mdi-phone-hangup" @click="$emit('close-room')" />
     </div>
     <audio ref="joinCallAudio" preload="auto" src="sounds/join-call.mp3" v-show="false"></audio>
     <audio ref="leaveCallAudio" preload="auto" src="sounds/leave-call.mp3" v-show="false"></audio>
@@ -75,7 +75,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, Ref, ref, toRef, watch, computed } from 'vue'
+import { defineComponent, onMounted, Ref, ref, toRef, watch, computed, onBeforeUnmount } from 'vue'
 import { Socket } from 'socket.io-client/build/esm/socket.js'
 import { DefaultEventsMap } from '@socket.io/component-emitter'
 import { io } from 'socket.io-client'
@@ -254,6 +254,8 @@ export default defineComponent({
       videoList.value.forEach(video => video.stream.getTracks().forEach(track => track.stop()))
       videoList.value = []
 
+      localStream.value?.getTracks().forEach(track => track.stop())
+
       // eslint-disable-next-line
       signalClient.value.peers().forEach((peer: any) => {
         // eslint-disable-next-line
@@ -272,13 +274,20 @@ export default defineComponent({
       socket.value?.disconnect()
       socket.value?.close()
       socket.value = null
-
-      emit('close-room')
     }
 
     const shareScreen = async () => {
       try {
         screenStream.value = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+        const screenVideoTracks: MediaStreamTrack[] = screenStream.value.getVideoTracks()
+
+        screenVideoTracks[0]?.addEventListener('ended', () => {
+          if (!screenStream.value) return
+
+          leaveRoom(screenStream.value)
+          screenStream.value = null
+        })
+
         joinedRoom(screenStream.value, true)
         emit('share-started', screenStream.value.id)
         // eslint-disable-next-line
@@ -312,6 +321,8 @@ export default defineComponent({
     const selectedVideo = computed(() => videoList.value[videoSelector.value])
 
     onMounted(join)
+    // hola
+    onBeforeUnmount(leave)
 
     return {
       enableAudio,
