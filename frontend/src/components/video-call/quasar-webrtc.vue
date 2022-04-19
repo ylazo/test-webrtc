@@ -79,7 +79,7 @@ import { defineComponent, onMounted, Ref, ref, toRef, watch, computed, onBeforeU
 import { Socket } from 'socket.io-client/build/esm/socket.js'
 import { DefaultEventsMap } from '@socket.io/component-emitter'
 import { io } from 'socket.io-client'
-import { Video } from 'components/models'
+import { Video, DiscoveryData } from 'components/models'
 import videoContainer from 'components/video-container.vue'
 import videoItem from 'components/video-item.vue'
 
@@ -157,9 +157,9 @@ export default defineComponent({
       joinedRoom(localStream.value, true)
 
       // eslint-disable-next-line
-      signalClient.value.on('discover', async (discoveryData: string[]) => {
+      signalClient.value.on('discover', async (discoveryData: DiscoveryData) => {
         // eslint-disable-next-line
-        discoveryData.forEach(async peerID => {
+        discoveryData.peers.forEach(async peerID => {
           if (peerID === socket.value?.id) return
           try {
             // eslint-disable-next-line
@@ -171,7 +171,7 @@ export default defineComponent({
           }
         })
 
-        sessionLength.value = discoveryData.length
+        sessionLength.value = discoveryData.peers.length
 
         emit('opened-room', roomId.value)
       })
@@ -327,8 +327,6 @@ export default defineComponent({
     return {
       enableAudio,
       enableVideo,
-      join,
-      leave,
       videoList,
       videos,
       videoSelector,

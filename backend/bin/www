@@ -48,17 +48,38 @@ io.on('connection', socket => {
 });
 
 const signalServer = require('simple-signal-server')(io)
-const allIDs = new Set()
+const rooms = {}
 
 signalServer.on('discover', (request) => {
   const clientID = request.socket.id // clients are uniquely identified by socket.id
-  allIDs.add(clientID) // keep track of all connected peers
-  request.discover(Array.from(allIDs)) // respond with id and list of other peers
+  const roomID = request.discoveryData
+
+  if (!request.discoveryData) {
+    console.log('no room')
+    return
+  }
+
+  if (!rooms.hasOwnProperty(roomID)) rooms[roomID] = new Set()
+
+  // if peer was already in a room then remove peer from that room
+  if (request.socket.roomID && rooms.hasOwnProperty(request.socket.roomID)) {
+    rooms[request.socket.roomID].delete(clientID)
+  }
+
+  if (request.socket.roomID !== roomID) {
+    request.socket.roomID = roomID
+    rooms[roomID].add(clientID)
+  }
+
+  request.discover({
+    roomResponse: roomID, // return the roomID so client can correlate discovery data
+    peers: Array.from(rooms[roomID])
+  })
 })
 
 signalServer.on('disconnect', (socket) => {
-  const clientID = socket.id
-  allIDs.delete(clientID)
+  rooms[socket.roomID].delete(socket.id)
+  if (!rooms[socket.roomID].size) delete rooms[socket.roomID]
 })
 
 signalServer.on('request', (request) => {

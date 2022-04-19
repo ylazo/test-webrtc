@@ -3,3 +3,8 @@ export interface Video {
   stream: MediaStream;
   isLocal: boolean
 }
+
+export interface DiscoveryData {
+  roomResponse: string;
+  peers: string[];
+}
