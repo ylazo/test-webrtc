@@ -31,7 +31,9 @@ module.exports = configure(function (ctx) {
     // https://quasar.dev/quasar-cli/boot-files
     boot: [
       'i18n',
-      'axios'
+      'axios',
+      { path: 'auth', server: false },
+      'component-box'
     ],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
@@ -57,7 +59,7 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: 'history', // available values: 'hash', 'history',
       env: {
-        backendUrl: 'https://fileback.invernaderolabs.com'
+        backendUrl: ctx.dev ? 'http://localhost:3000' : 'https://fileback.invernaderolabs.com'
       },
       extendWebpack (cfg) {
         cfg.plugins.push(               
@@ -117,7 +119,7 @@ module.exports = configure(function (ctx) {
       // directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: ['Notify']
     },
 
     // animations: 'all', // --- includes all animations

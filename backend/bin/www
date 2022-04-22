@@ -36,7 +36,6 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 io.on('connection', socket => {
-  console.log('nueva connection', socket.id)
 
   socket.on('chat:message', data => {
     io.emit('chat:message', data);

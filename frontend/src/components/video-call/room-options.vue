@@ -44,7 +44,7 @@ export default defineComponent({
     }
 
     const goRoom = (uuid: string) => {
-      router.push(`/${uuid}`).catch((e) => console.warn(e))
+      router.push(`/meet/${uuid}`).catch((e) => console.warn(e))
     }
 
     const submit = () => {

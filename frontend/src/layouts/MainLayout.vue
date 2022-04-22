@@ -7,7 +7,15 @@
           Video meet
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <q-btn dense flat round icon="mdi-menu">
+          <q-menu>
+            <q-list style="min-width: 100px">
+              <q-item clickable v-close-popup @click.stop="logout">
+                <q-item-section>Cerrar sesión</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -18,13 +26,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, onMounted } from 'vue'
+import oauth2 from 'src/composables/oauth2.service'
+import auth from 'src/composables/auth'
 
 export default defineComponent({
   name: 'MainLayout',
-
   setup () {
-    return {}
+    const { onUnLoged, logout } = auth()
+    const { getToken } = oauth2()
+
+    onMounted(async () => {
+      if (!getToken()) await onUnLoged()
+    })
+
+    return { logout }
   }
 })
 </script>

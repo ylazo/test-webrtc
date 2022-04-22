@@ -8,3 +8,12 @@ export interface DiscoveryData {
   roomResponse: string;
   peers: string[];
 }
+
+export interface Login {
+  accessToken: string;
+  expire: string;
+}
+
+export interface ServerError {
+  message: string;
+}

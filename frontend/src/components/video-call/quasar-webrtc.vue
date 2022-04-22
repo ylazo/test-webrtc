@@ -96,7 +96,7 @@ export default defineComponent({
     },
     roomId: {
       type: String,
-      default: 'public-room-v2'
+      required: true
     }
   },
   emits: ['opened-room', 'joined-room', 'left-room', 'close-room', 'share-started', 'screen-shared'],
@@ -186,7 +186,7 @@ export default defineComponent({
         if (screenStream.value) onPeer(peer, screenStream.value)
 
         // eslint-disable-next-line
-        sessionLength.value = signalClient.value.peers().length
+        sessionLength.value = signalClient.value.peers().length + 1
       })
 
       // eslint-disable-next-line
@@ -222,7 +222,7 @@ export default defineComponent({
 
           onDisPeer(remoteStream)
           // eslint-disable-next-line
-          sessionLength.value = signalClient.value.peers().length
+          sessionLength.value = signalClient.value.peers().length + 1
         })
 
         // eslint-disable-next-line
