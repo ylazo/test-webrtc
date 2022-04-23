@@ -75,10 +75,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, Ref, ref, toRef, watch, computed, onBeforeUnmount } from 'vue'
+import {
+  defineComponent,
+  onMounted,
+  Ref,
+  ref,
+  toRef,
+  watch,
+  computed,
+  onBeforeUnmount,
+  PropType
+} from 'vue'
 import { Socket } from 'socket.io-client/build/esm/socket.js'
 import { DefaultEventsMap } from '@socket.io/component-emitter'
-import { io } from 'socket.io-client'
 import { Video, DiscoveryData } from 'components/models'
 import videoContainer from 'components/video-container.vue'
 import videoItem from 'components/video-item.vue'
@@ -90,12 +99,12 @@ export default defineComponent({
   name: 'quasar-webrtc',
   props: {
     deviceId: String,
-    socketUrl: {
+    roomId: {
       type: String,
       required: true
     },
-    roomId: {
-      type: String,
+    socket: {
+      type: Object as PropType<Socket<DefaultEventsMap, DefaultEventsMap>>,
       required: true
     }
   },
@@ -104,9 +113,8 @@ export default defineComponent({
   setup (props, { emit }) {
     const deviceId = toRef(props, 'deviceId')
     const roomId = toRef(props, 'roomId')
-    const socketUrl = toRef(props, 'socketUrl')
+    const socket = toRef(props, 'socket')
 
-    const socket: Ref<Socket<DefaultEventsMap, DefaultEventsMap> | null> = ref(null)
     const localStream: Ref<MediaStream | null> = ref(null)
     const videoList: Ref<Video[]> = ref([])
     const videos: Ref<HTMLVideoElement[]> = ref([])
@@ -141,7 +149,6 @@ export default defineComponent({
     watch(enableVideo, setVideo)
 
     const join = async () => {
-      socket.value = io(socketUrl.value, { rejectUnauthorized: false, transports: ['websocket'] })
       // eslint-disable-next-line
       signalClient.value = new SimpleSignalClient(socket.value)
 
@@ -184,9 +191,6 @@ export default defineComponent({
         if (localStream.value) onPeer(peer, localStream.value)
 
         if (screenStream.value) onPeer(peer, screenStream.value)
-
-        // eslint-disable-next-line
-        sessionLength.value = signalClient.value.peers().length + 1
       })
 
       // eslint-disable-next-line
@@ -199,6 +203,8 @@ export default defineComponent({
     const onDisPeer = (stream: MediaStream) => {
       leaveRoom(stream)
       leaveCallAudio.value?.play().finally(() => null)
+      // eslint-disable-next-line
+      sessionLength.value = signalClient.value.peers().length + 1
     }
 
     // eslint-disable-next-line
@@ -209,20 +215,14 @@ export default defineComponent({
       peer.addStream(localStream)
       // eslint-disable-next-line
       peer.on('stream', async (remoteStream: MediaStream) => {
+        // eslint-disable-next-line
+        sessionLength.value = signalClient.value.peers().length + 1
+
         joinedRoom(remoteStream, false)
 
         // eslint-disable-next-line
         peer.on('close', async () => {
-          try {
-            // eslint-disable-next-line
-            signalClient.value._peers[peer.id]
-          } catch (e) {
-            console.warn(e)
-          }
-
           onDisPeer(remoteStream)
-          // eslint-disable-next-line
-          sessionLength.value = signalClient.value.peers().length + 1
         })
 
         // eslint-disable-next-line
@@ -270,10 +270,6 @@ export default defineComponent({
 
       localStream.value?.getTracks().forEach(track => track.stop())
       localStream.value = null
-
-      socket.value?.disconnect()
-      socket.value?.close()
-      socket.value = null
     }
 
     const shareScreen = async () => {

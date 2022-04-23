@@ -1,9 +1,9 @@
 export default () => {
   const ID_TOKEN_KEY = 'id_token'
 
-  const getToken = (): string | null => {
+  const getToken = (): string => {
     if (typeof window === 'undefined') return ''
-    return window.localStorage.getItem(ID_TOKEN_KEY)
+    return window.localStorage.getItem(ID_TOKEN_KEY) || ''
   }
 
   const saveToken = (token: string) => {

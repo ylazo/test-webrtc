@@ -15,10 +15,7 @@ router.post("/login", async (req, res, next) => {
 
 router.get("/verify", async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization'] || ''
-    const bearerToken = authHeader.split(' ')
-    const token = bearerToken[1]
-    res.send(await verifyAccessToken(token))
+    res.send(await verifyAccessToken(req.headers['authorization']))
   } catch (e) {
     res.status(401).send(e)
   }

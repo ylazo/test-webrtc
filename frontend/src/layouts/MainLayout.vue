@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from 'vue'
+import { defineComponent /*, onMounted */ } from 'vue'
 import oauth2 from 'src/composables/oauth2.service'
 import auth from 'src/composables/auth'
 
@@ -36,11 +36,13 @@ export default defineComponent({
     const { onUnLoged, logout } = auth()
     const { getToken } = oauth2()
 
+    /*
     onMounted(async () => {
       if (!getToken()) await onUnLoged()
     })
+    */
 
-    return { logout }
+    return { logout, getToken, onUnLoged }
   }
 })
 </script>

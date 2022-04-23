@@ -17,8 +17,6 @@ export default () => {
     $q.notify({
       type: 'warning',
       color: 'warning',
-      timeout: 4000,
-      // position: 'center',
       message: e.response?.data.message
     })
   }

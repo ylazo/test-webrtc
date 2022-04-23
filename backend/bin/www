@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('backend:server');
 var http = require('http');
+const { verifyAccessToken } = require('../Controllers/jwt.controller.js')
 
 /**
  * Get port from environment and store in Express.
@@ -35,8 +36,17 @@ server.on('listening', onListening);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-io.on('connection', socket => {
+io.use(async (socket, next) => {
+  try {
+    await verifyAccessToken(socket.handshake.auth.token)
+    next()
+  } catch (e) {
+    next(new Error('Usuario no autorizado'))
+  }
+})
 
+io.on('connection', socket => {
+  console.log('connection')
   socket.on('chat:message', data => {
     io.emit('chat:message', data);
   });
@@ -70,6 +80,8 @@ signalServer.on('discover', (request) => {
     rooms[roomID].add(clientID)
   }
 
+  console.log(rooms)
+
   request.discover({
     roomResponse: roomID, // return the roomID so client can correlate discovery data
     peers: Array.from(rooms[roomID])
@@ -77,7 +89,8 @@ signalServer.on('discover', (request) => {
 })
 
 signalServer.on('disconnect', (socket) => {
-  rooms[socket.roomID].delete(socket.id)
+  if (!rooms[socket.roomID]) return
+  if (rooms[socket.roomID].has(socket.id)) rooms[socket.roomID].delete(socket.id)
   if (!rooms[socket.roomID].size) delete rooms[socket.roomID]
 })
 

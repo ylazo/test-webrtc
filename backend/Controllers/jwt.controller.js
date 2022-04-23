@@ -19,8 +19,15 @@ const signAccessToken = ({ username, userId }) => {
   })
 }
 
-const verifyAccessToken = (token) => {
+const getTokenHeader = (auth) => {
+  if (typeof auth !== 'string') return ''
+  return auth.split(' ')[1] || ''
+}
+
+const verifyAccessToken = (auth) => {
   return new Promise((resolve, reject) => {
+    const token = getTokenHeader(auth)
+
     JWT.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, payload) => {
       if (err) {
         reject(err)
