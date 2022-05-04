@@ -7,7 +7,33 @@
 var app = require('../app');
 var debug = require('debug')('backend:server');
 var http = require('http');
-const { verifyAccessToken } = require('../Controllers/jwt.controller.js')
+const {
+  rooms,
+  createRoom,
+  getRoom,
+  addToRoom,
+  deleteFromRoom,
+  deleteRoom,
+  setAdminSocketId
+} = require('../Controllers/rooms.controller.js')
+const { verifyAccessToken, verifyRoomAccessToken } = require('../Controllers/jwt.controller.js')
+const { setAdminEvents, setClientEvents } = require('./socket.events')
+
+const checkRoomAuthorization = async (token) => {
+  const {
+    roomId,
+    userId,
+    creatorUserId: clientCreatorUserId
+  } = await verifyRoomAccessToken(token)
+
+  const { creatorUserId, peersIds } = getRoom(roomId)
+
+  if (!(creatorUserId === clientCreatorUserId)) {
+    throw new Error('Usuario no autorizado')
+  }
+
+  return { roomId, userId, creatorUserId }
+}
 
 /**
  * Get port from environment and store in Express.
@@ -45,53 +71,60 @@ io.use(async (socket, next) => {
   }
 })
 
-io.on('connection', socket => {
-  console.log('connection')
-  socket.on('chat:message', data => {
-    io.emit('chat:message', data);
-  });
+io.on('connection', async socket => {
+  try {
+    const { userId, roomId, creatorUserId } = await checkRoomAuthorization(socket.handshake.auth.roomToken)
+    socket.emit('roomJoined')
 
-  socket.on('chat:typing', data => {
-    socket.broadcast.emit('chat:typing', data)
+    if (userId === creatorUserId) {
+      setAdminSocketId(roomId, socket.id)
+      setAdminEvents(socket, io)
+    }
+  } catch (e) {
+    setClientEvents(socket, io)
+  }
+
+  socket.on('disconnect', (reason) => {
+    socket.removeAllListeners()
   })
+
 });
 
 const signalServer = require('simple-signal-server')(io)
-const rooms = {}
 
-signalServer.on('discover', (request) => {
-  const clientID = request.socket.id // clients are uniquely identified by socket.id
-  const roomID = request.discoveryData
+signalServer.on('discover', async (request) => {
+  try {
+    const { socket, discoveryData } = request
+    const { roomId, token } = discoveryData
 
-  if (!request.discoveryData) {
-    console.log('no room')
-    return
+    await checkRoomAuthorization(socket.handshake.auth.roomToken)
+
+    if (socket.roomId && rooms.hasOwnProperty(socket.roomId)) {
+      deleteFromRoom(socket.roomId, socket.id)
+      socket.roomId = null
+    }
+
+    if (!(socket.roomId === roomId)) {
+      socket.roomId = roomId
+      addToRoom(roomId, socket.id)
+    }
+
+    request.discover({
+      roomResponse: roomId, // return the roomID so client can correlate discovery data
+      peers: getRoom(roomId).peersIds
+    })
+  } catch (e) {
+    console.warn(e)
+    socket.emit('discover_error', e)
   }
-
-  if (!rooms.hasOwnProperty(roomID)) rooms[roomID] = new Set()
-
-  // if peer was already in a room then remove peer from that room
-  if (request.socket.roomID && rooms.hasOwnProperty(request.socket.roomID)) {
-    rooms[request.socket.roomID].delete(clientID)
-  }
-
-  if (request.socket.roomID !== roomID) {
-    request.socket.roomID = roomID
-    rooms[roomID].add(clientID)
-  }
-
-  console.log(rooms)
-
-  request.discover({
-    roomResponse: roomID, // return the roomID so client can correlate discovery data
-    peers: Array.from(rooms[roomID])
-  })
 })
 
 signalServer.on('disconnect', (socket) => {
-  if (!rooms[socket.roomID]) return
-  if (rooms[socket.roomID].has(socket.id)) rooms[socket.roomID].delete(socket.id)
-  if (!rooms[socket.roomID].size) delete rooms[socket.roomID]
+  try {
+    deleteFromRoom(socket.roomId, socket.id)
+  } catch (e) {
+    // console.warn(e)
+  }
 })
 
 signalServer.on('request', (request) => {

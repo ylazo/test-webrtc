@@ -106,6 +106,10 @@ export default defineComponent({
     socket: {
       type: Object as PropType<Socket<DefaultEventsMap, DefaultEventsMap>>,
       required: true
+    },
+    roomToken: {
+      type: String,
+      required: true
     }
   },
   emits: ['opened-room', 'joined-room', 'left-room', 'close-room', 'share-started', 'screen-shared'],
@@ -164,7 +168,7 @@ export default defineComponent({
       joinedRoom(localStream.value, true)
 
       // eslint-disable-next-line
-      signalClient.value.on('discover', async (discoveryData: DiscoveryData) => {
+      signalClient.value.on('discover', (discoveryData: DiscoveryData) => {
         // eslint-disable-next-line
         discoveryData.peers.forEach(async peerID => {
           if (peerID === socket.value?.id) return
@@ -194,7 +198,7 @@ export default defineComponent({
       })
 
       // eslint-disable-next-line
-      signalClient.value.discover(roomId.value)
+      signalClient.value.discover({ roomId: roomId.value })
 
       setAudio()
       setVideo()
@@ -316,7 +320,13 @@ export default defineComponent({
 
     const selectedVideo = computed(() => videoList.value[videoSelector.value])
 
-    onMounted(join)
+    onMounted(async () => {
+      try {
+        await join()
+      } catch (e) {
+        console.log(e)
+      }
+    })
     // hola
     onBeforeUnmount(leave)
 

@@ -17,3 +17,21 @@ export interface Login {
 export interface ServerError {
   message: string;
 }
+
+export interface Room {
+  creatorUserId: string;
+  peersIds: string[];
+}
+
+export interface RoomData {
+  room: Room;
+}
+
+export interface RoomAuthorization extends RoomData {
+  token: string;
+}
+
+export interface joinRequestData {
+  username: string;
+  requesterId: string;
+}

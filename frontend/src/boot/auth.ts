@@ -5,7 +5,7 @@ import oauth2 from 'src/composables/oauth2.service'
 const { getToken, destroyToken } = oauth2()
 
 const setAxiosHeader = () => {
-  api.defaults.headers = { Authorization: getToken() || '' }
+  api.defaults.headers = { Authorization: getToken() }
 }
 
 setAxiosHeader()

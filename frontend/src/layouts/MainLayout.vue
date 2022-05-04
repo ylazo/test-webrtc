@@ -4,7 +4,9 @@
       <q-toolbar>
 
         <q-toolbar-title>
-          Video meet
+          <router-link to="/" style="text-decoration: none;color: white;">
+            Video meet
+          </router-link>
         </q-toolbar-title>
 
         <q-btn dense flat round icon="mdi-menu">
@@ -26,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent /*, onMounted */ } from 'vue'
+import { defineComponent, onMounted } from 'vue'
 import oauth2 from 'src/composables/oauth2.service'
 import auth from 'src/composables/auth'
 
@@ -36,11 +38,9 @@ export default defineComponent({
     const { onUnLoged, logout } = auth()
     const { getToken } = oauth2()
 
-    /*
     onMounted(async () => {
       if (!getToken()) await onUnLoged()
     })
-    */
 
     return { logout, getToken, onUnLoged }
   }

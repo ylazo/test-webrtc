@@ -1,5 +1,5 @@
 export default () => {
-  const ID_TOKEN_KEY = 'id_token'
+  const ID_TOKEN_KEY = 'room_token'
 
   const getToken = (): string => {
     if (typeof window === 'undefined') return ''
@@ -13,7 +13,7 @@ export default () => {
 
   const destroyToken = () => {
     if (typeof window === 'undefined') return
-    window.localStorage.clear()
+    window.localStorage.removeItem(ID_TOKEN_KEY)
   }
 
   return { getToken, saveToken, destroyToken }

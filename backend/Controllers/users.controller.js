@@ -1,6 +1,7 @@
 const usuarios = [
   { username: 'ylazo', password: 'password_0', userId: 'userId' },
-  { username: 'admin', password: 'password_0', userId: 'admin' }
+  { username: 'admin', password: 'password_0', userId: 'admin' },
+  { username: 'cliente', password: 'password_0', userId: 'cliente' }
 ]
 
 const findOne = (userFind) => {

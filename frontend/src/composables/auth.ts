@@ -13,8 +13,7 @@ export default () => {
 
   const login = async (username: string, password: string) => {
     try {
-      const data = await api.post('auth/login', { username, password })
-        .then(({ data }: AxiosResponse<Login>) => data)
+      const { data }: AxiosResponse<Login> = await api.post('auth/login', { username, password })
       onLogin(data)
       await onLoged()
     } catch (e) {
