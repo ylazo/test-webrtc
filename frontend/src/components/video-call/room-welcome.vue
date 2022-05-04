@@ -80,7 +80,6 @@ export default defineComponent({
         }
       }
 
-      loading.value = true
       socket.value = io(socketUrl, options)
 
       socket.value.on('connect', () => {
@@ -118,7 +117,7 @@ export default defineComponent({
       })
 
       socket.value.on('roomJoined', () => {
-        joined.value = true
+        joined.value = false
       })
     }
 
