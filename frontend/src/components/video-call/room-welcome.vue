@@ -117,12 +117,14 @@ export default defineComponent({
       })
 
       socket.value.on('roomJoined', () => {
-        joined.value = false
+        loading.value = false
+        joined.value = true
       })
     }
 
     const joinRequest = () => {
       socket.value?.emit('joinRequest', { roomId: roomId.value })
+      console.log('solicitud enviada!')
       loading.value = true
     }
 
